@@ -13,6 +13,10 @@ public class Email implements Serializable {
         this.spam = spam;
     }
 
+    public Email(List<String> words) {
+        this.words = words;
+    }
+
     public List<String> getWords() {
         return words;
     }
