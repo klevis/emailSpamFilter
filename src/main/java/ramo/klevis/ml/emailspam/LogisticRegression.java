@@ -171,7 +171,7 @@ public class LogisticRegression implements Serializable {
         List<LabeledPoint> labeledPoints = convertToLabelPoints(vocabulary);
         JavaSparkContext sparkContext = createSparkContext();
         JavaRDD<LabeledPoint> labeledPointJavaRDD = sparkContext.parallelize(labeledPoints);
-        JavaRDD<LabeledPoint>[] splits = labeledPointJavaRDD.randomSplit(new double[]{0.6, 0.4}, 11L);
+        JavaRDD<LabeledPoint>[] splits = labeledPointJavaRDD.randomSplit(new double[]{0.8, 0.2}, 11L);
         JavaRDD<LabeledPoint> training = splits[0].cache();
         JavaRDD<LabeledPoint> test = splits[1];
 
