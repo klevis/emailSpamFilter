@@ -15,7 +15,13 @@ import scala.Tuple2;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +49,7 @@ public class LogisticRegression implements Serializable {
         return new JavaSparkContext(conf);
     }
 
-    private Map<String, Integer> createVocabulary() throws IOException {
+    private Map<String, Integer> createVocabulary() throws Exception {
         String first = "allInOneSpamBase/spam";
         String second = "allInOneSpamBase/spam_2";
         List<String> collect1 = filesToWords(first);
@@ -68,8 +74,10 @@ public class LogisticRegression implements Serializable {
         return model != null;
     }
 
-    private List<String> filesToWords(String fileName) throws IOException {
-        List<String> collect = Files.walk(Paths.get(fileName)).parallel()
+    private List<String> filesToWords(String fileName) throws Exception {
+        URI uri = this.getClass().getResource("/" + fileName).toURI();
+        Path start = getPath(uri);
+        List<String> collect = Files.walk(start).parallel()
                 .filter(Files::isRegularFile)
                 .flatMap(file -> {
                     try {
@@ -85,8 +93,11 @@ public class LogisticRegression implements Serializable {
         return collect.stream().parallel().flatMap(e -> tokenizeIntoWords(preapreEmail(e)).stream()).collect(Collectors.toList());
     }
 
-    private List<Email> filesToEmailWords(String fileName) throws IOException {
-        List<Email> collect = Files.walk(Paths.get(fileName)).parallel()
+
+    private List<Email> filesToEmailWords(String fileName) throws IOException, URISyntaxException {
+        URI uri = this.getClass().getResource("/" + fileName).toURI();
+        Path start = getPath(uri);
+        List<Email> collect = Files.walk(start).parallel()
                 .filter(Files::isRegularFile)
                 .map(file -> {
                     try {
@@ -102,7 +113,20 @@ public class LogisticRegression implements Serializable {
         return collect;
     }
 
-    private List<LabeledPoint> convertToLabelPoints(Map<String, Integer> vocabulary) throws IOException {
+    private Path getPath(URI uri) throws IOException {
+        Path start = null;
+        try {
+            start = Paths.get(uri);
+        } catch (FileSystemNotFoundException e) {
+            Map<String, String> env = new HashMap<>();
+            env.put("create", "true");
+            FileSystems.newFileSystem(uri, env);
+            start = Paths.get(uri);
+        }
+        return start;
+    }
+
+    private List<LabeledPoint> convertToLabelPoints(Map<String, Integer> vocabulary) throws Exception {
         ArrayList<Email> emails = new ArrayList<>();
         emails.addAll(filesToEmailWords("allInOneSpamBase/spam"));
         emails.addAll(filesToEmailWords("allInOneSpamBase/hard_ham"));
@@ -142,7 +166,7 @@ public class LogisticRegression implements Serializable {
         return dollarReplaced;
     }
 
-    public MulticlassMetrics execute() throws IOException {
+    public MulticlassMetrics execute() throws Exception {
         vocabulary = createVocabulary();
         List<LabeledPoint> labeledPoints = convertToLabelPoints(vocabulary);
         JavaSparkContext sparkContext = createSparkContext();

@@ -22,30 +22,8 @@ import java.util.Map;
 public class Run {
 
     public static void main(String[] args) throws Exception {
-        setHadoopHomeEnvironmentVariable();
-        new EmailUI(new LogisticRegression(1000));
-       /*
-        LogisticRegression logisticRegression = new LogisticRegression(10000);
-        MulticlassMetrics metrics = logisticRegression.execute();
-        double accuracy = metrics.accuracy();
-        System.out.println("Accuracy = " + accuracy);*/
+        new EmailUI(new LogisticRegression(8000));
 
     }
 
-
-    private static void setHadoopHomeEnvironmentVariable() throws Exception {
-        HashMap<String, String> hadoopEnvSetUp = new HashMap<>();
-        hadoopEnvSetUp.put("HADOOP_HOME", new File("winutils-master/hadoop-2.8.1").getAbsolutePath());
-        Class<?> processEnvironmentClass = Class.forName("java.lang.ProcessEnvironment");
-        Field theEnvironmentField = processEnvironmentClass.getDeclaredField("theEnvironment");
-        theEnvironmentField.setAccessible(true);
-        Map<String, String> env = (Map<String, String>) theEnvironmentField.get(null);
-        env.clear();
-        env.putAll(hadoopEnvSetUp);
-        Field theCaseInsensitiveEnvironmentField = processEnvironmentClass.getDeclaredField("theCaseInsensitiveEnvironment");
-        theCaseInsensitiveEnvironmentField.setAccessible(true);
-        Map<String, String> cienv = (Map<String, String>) theCaseInsensitiveEnvironmentField.get(null);
-        cienv.clear();
-        cienv.putAll(hadoopEnvSetUp);
-    }
 }

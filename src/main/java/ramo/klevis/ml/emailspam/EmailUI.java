@@ -83,7 +83,7 @@ public class EmailUI {
                 try {
                     MulticlassMetrics execute = logisticRegression.execute();
                     JOptionPane.showMessageDialog(mainFrame, "Algorithm trained with accuracy : "+execute.accuracy());
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
                     progressBar.setVisible(false);
