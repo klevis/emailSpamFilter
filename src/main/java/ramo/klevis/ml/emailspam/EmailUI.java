@@ -45,6 +45,7 @@ public class EmailUI implements Serializable {
         buttonPanel.add(test);
         JButton train = createTrainButton();
         buttonPanel.add(train);
+        buttonPanel.add(createSGDTrainButton());
         buttonPanel.add(createSVMTrainButton());
         mainPanel.add(buttonPanel, BorderLayout.WEST);
 
@@ -85,7 +86,7 @@ public class EmailUI implements Serializable {
     }
 
     private JButton createTrainButton() {
-        JButton train = new JButton("Train with LG");
+        JButton train = new JButton("Train with LG LBFGS");
         train.addActionListener(action -> {
             showProgressBar();
 
@@ -94,11 +95,13 @@ public class EmailUI implements Serializable {
                     if (classificationAlgorithm != null) {
                         classificationAlgorithm.dispose();
                     }
+                    long start = System.currentTimeMillis();
                     LogisticRegressionWithLBFGS model = new LogisticRegressionWithLBFGS();
                     model.setNumClasses(2);
                     classificationAlgorithm = new ClassificationAlgorithm(featureSize, model);
                     MulticlassMetrics execute = classificationAlgorithm.execute();
-                    JOptionPane.showMessageDialog(mainFrame, "Algorithm trained with accuracy : " + execute.accuracy());
+                    long time = System.currentTimeMillis() - start;
+                    JOptionPane.showMessageDialog(mainFrame, "Algorithm trained with accuracy : " + execute.accuracy() + " in " + time / 1000 + " seconds");
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
@@ -113,8 +116,8 @@ public class EmailUI implements Serializable {
         return train;
     }
 
-    private JButton createSVMTrainButton() {
-        JButton train = new JButton("Train with SVM");
+    private JButton createSGDTrainButton() {
+        JButton train = new JButton("Train with LG SGD");
         train.addActionListener(action -> {
             showProgressBar();
 
@@ -123,9 +126,42 @@ public class EmailUI implements Serializable {
                     if (classificationAlgorithm != null) {
                         classificationAlgorithm.dispose();
                     }
+                    long start = System.currentTimeMillis();
+                    LogisticRegressionWithSGD model = new LogisticRegressionWithSGD();
+                    classificationAlgorithm = new ClassificationAlgorithm(featureSize, model);
+                    MulticlassMetrics execute = classificationAlgorithm.execute();
+                    long time = System.currentTimeMillis() - start;
+                    JOptionPane.showMessageDialog(mainFrame, "Algorithm trained with accuracy : " + execute.accuracy() + " in " + time / 1000 + " seconds");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    progressBar.setVisible(false);
+                }
+            };
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            thread.start();
+
+        });
+        return train;
+    }
+
+
+    private JButton createSVMTrainButton() {
+        JButton train = new JButton("Train with SVM SGD");
+        train.addActionListener(action -> {
+            showProgressBar();
+
+            Runnable runnable = () -> {
+                try {
+                    if (classificationAlgorithm != null) {
+                        classificationAlgorithm.dispose();
+                    }
+                    long start = System.currentTimeMillis();
                     classificationAlgorithm = new ClassificationAlgorithm(featureSize, new SVMWithSGD());
                     MulticlassMetrics execute = classificationAlgorithm.execute();
-                    JOptionPane.showMessageDialog(mainFrame, "Algorithm trained with accuracy : " + execute.accuracy());
+                    long time = System.currentTimeMillis() - start;
+                    JOptionPane.showMessageDialog(mainFrame, "Algorithm trained with accuracy : " + execute.accuracy() + " in " + time / 1000 + " seconds");
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
