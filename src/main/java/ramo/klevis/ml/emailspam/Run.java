@@ -6,7 +6,7 @@ package ramo.klevis.ml.emailspam;
 public class Run {
 
     public static void main(String[] args) throws Exception {
-        new EmailUI(new LogisticRegression(10000));
+        new EmailUI(10000);
 
     }
 

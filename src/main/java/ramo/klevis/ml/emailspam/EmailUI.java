@@ -1,28 +1,36 @@
 package ramo.klevis.ml.emailspam;
 
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.mllib.classification.LogisticRegressionWithLBFGS;
+import org.apache.spark.mllib.classification.LogisticRegressionWithSGD;
+import org.apache.spark.mllib.classification.SVMWithSGD;
 import org.apache.spark.mllib.evaluation.MulticlassMetrics;
+import org.apache.spark.mllib.optimization.L1Updater;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Created by klevis.ramo on 9/26/2017.
  */
-public class EmailUI {
+public class EmailUI implements Serializable {
 
-    private static final int FRAME_WIDTH = 1000;
-    private static final int FRAME_HEIGHT = 600;
+    private static final int FRAME_WIDTH = 800;
+    private static final int FRAME_HEIGHT = 400;
     private JProgressBar progressBar;
     private JPanel mainPanel;
     private JFrame mainFrame;
-    private LogisticRegression logisticRegression;
     private JTextArea textArea;
+    private int featureSize;
+    private ClassificationAlgorithm classificationAlgorithm;
 
-    public EmailUI(LogisticRegression logisticRegression) {
-        this.logisticRegression = logisticRegression;
+    public EmailUI(int featureSize) {
+        this.featureSize = featureSize;
         initUI();
     }
 
@@ -32,11 +40,12 @@ public class EmailUI {
         mainPanel = new JPanel();
         mainPanel.setLayout(new BorderLayout());
 
-        JPanel buttonPanel = new JPanel(new GridLayout(15, 1));
+        JPanel buttonPanel = new JPanel(new GridLayout(10, 1));
         JButton test = createTestButton();
         buttonPanel.add(test);
         JButton train = createTrainButton();
         buttonPanel.add(train);
+        buttonPanel.add(createSVMTrainButton());
         mainPanel.add(buttonPanel, BorderLayout.WEST);
 
         textArea = new JTextArea();
@@ -50,6 +59,7 @@ public class EmailUI {
         mainFrame.setVisible(true);
     }
 
+
     private void addSignature(JPanel mainFrame) {
         JLabel signature = new JLabel("ramok.tech", JLabel.HORIZONTAL);
         signature.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 16));
@@ -62,11 +72,11 @@ public class EmailUI {
         test.addActionListener(action -> {
 
             try {
-                if (!logisticRegression.isTrained()) {
+                if (classificationAlgorithm == null || !classificationAlgorithm.isTrained()) {
                     JOptionPane.showMessageDialog(mainFrame, "Please train the algorithm first");
                     return;
                 }
-                JOptionPane.showMessageDialog(mainFrame, "" + (logisticRegression.test(textArea.getText()) == 1d ? "SPAM" : "Not SPAM"));
+                JOptionPane.showMessageDialog(mainFrame, "" + (classificationAlgorithm.test(textArea.getText()) == 1d ? "SPAM" : "Not SPAM"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -75,14 +85,47 @@ public class EmailUI {
     }
 
     private JButton createTrainButton() {
-        JButton train = new JButton("Train");
+        JButton train = new JButton("Train with LG");
         train.addActionListener(action -> {
             showProgressBar();
 
             Runnable runnable = () -> {
                 try {
-                    MulticlassMetrics execute = logisticRegression.execute();
-                    JOptionPane.showMessageDialog(mainFrame, "Algorithm trained with accuracy : "+execute.accuracy());
+                    if (classificationAlgorithm != null) {
+                        classificationAlgorithm.dispose();
+                    }
+                    LogisticRegressionWithLBFGS model = new LogisticRegressionWithLBFGS();
+                    model.setNumClasses(2);
+                    classificationAlgorithm = new ClassificationAlgorithm(featureSize, model);
+                    MulticlassMetrics execute = classificationAlgorithm.execute();
+                    JOptionPane.showMessageDialog(mainFrame, "Algorithm trained with accuracy : " + execute.accuracy());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    progressBar.setVisible(false);
+                }
+            };
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            thread.start();
+
+        });
+        return train;
+    }
+
+    private JButton createSVMTrainButton() {
+        JButton train = new JButton("Train with SVM");
+        train.addActionListener(action -> {
+            showProgressBar();
+
+            Runnable runnable = () -> {
+                try {
+                    if (classificationAlgorithm != null) {
+                        classificationAlgorithm.dispose();
+                    }
+                    classificationAlgorithm = new ClassificationAlgorithm(featureSize, new SVMWithSGD());
+                    MulticlassMetrics execute = classificationAlgorithm.execute();
+                    JOptionPane.showMessageDialog(mainFrame, "Algorithm trained with accuracy : " + execute.accuracy());
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
@@ -129,4 +172,5 @@ public class EmailUI {
         });
         return mainFrame;
     }
+
 }

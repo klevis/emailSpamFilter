@@ -3,6 +3,7 @@ package ramo.klevis.ml.emailspam;
 import org.tartarus.snowball.ext.PorterStemmer;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystemNotFoundException;
@@ -21,7 +22,7 @@ import java.util.stream.Stream;
 /**
  * Created by klevis.ramo on 10/9/2017.
  */
-public class PrepareData {
+public class PrepareData implements Serializable{
 
     private final long featureSIze;
 

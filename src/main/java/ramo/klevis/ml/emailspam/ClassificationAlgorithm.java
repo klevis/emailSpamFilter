@@ -4,11 +4,11 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.mllib.classification.LogisticRegressionModel;
-import org.apache.spark.mllib.classification.LogisticRegressionWithLBFGS;
 import org.apache.spark.mllib.evaluation.MulticlassMetrics;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
+import org.apache.spark.mllib.regression.GeneralizedLinearAlgorithm;
+import org.apache.spark.mllib.regression.GeneralizedLinearModel;
 import org.apache.spark.mllib.regression.LabeledPoint;
 import scala.Tuple2;
 
@@ -23,34 +23,35 @@ import java.util.stream.Collectors;
 /**
  * Created by klevis.ramo on 9/26/2017.
  */
-public class LogisticRegression implements Serializable {
+public class ClassificationAlgorithm implements Serializable {
 
     private final PrepareData prepareData;
     private int featureSIze = 12000;
-    private LogisticRegressionModel model;
+    private GeneralizedLinearAlgorithm model;
     private Map<String, Integer> vocabulary;
+    private GeneralizedLinearModel linearModel;
+    private transient JavaSparkContext sparkContext;
 
-    public LogisticRegression(int featureSIze) {
+    public ClassificationAlgorithm(int featureSIze, GeneralizedLinearAlgorithm model) {
         this.featureSIze = featureSIze;
         prepareData = new PrepareData(featureSIze);
-    }
-
-    private JavaSparkContext createSparkContext() {
-        SparkConf conf = new SparkConf().setAppName("Finance Fraud Detection").setMaster("local[*]");
-        return new JavaSparkContext(conf);
+        this.model = model;
     }
 
     public double test(String emailString) throws IOException {
         Email email = prepareData.prepareEmailForTesting(emailString);
-        return model.predict(transformToFeatureVector(email, vocabulary));
+        return linearModel.predict(transformToFeatureVector(email, vocabulary));
     }
 
     public boolean isTrained() {
-        return model != null;
+        return linearModel != null;
     }
 
+    public void dispose() {
+        sparkContext.close();
+    }
 
-    private List<LabeledPoint> convertToLabelPoints(Map<String, Integer> vocabulary) throws Exception {
+    private List<LabeledPoint> convertToLabelPoints() throws Exception {
         ArrayList<Email> emails = new ArrayList<>();
         emails.addAll(prepareData.filesToEmailWords("allInOneSpamBase/spam"));
         emails.addAll(prepareData.filesToEmailWords("allInOneSpamBase/hard_ham"));
@@ -62,20 +63,19 @@ public class LogisticRegression implements Serializable {
 
     public MulticlassMetrics execute() throws Exception {
         vocabulary = prepareData.createVocabulary();
-        List<LabeledPoint> labeledPoints = convertToLabelPoints(vocabulary);
-        JavaSparkContext sparkContext = createSparkContext();
+        List<LabeledPoint> labeledPoints = convertToLabelPoints();
+        sparkContext = createSparkContext();
         JavaRDD<LabeledPoint> labeledPointJavaRDD = sparkContext.parallelize(labeledPoints);
-        JavaRDD<LabeledPoint>[] splits = labeledPointJavaRDD.randomSplit(new double[]{0.8, 0.2}, 11L);
+        JavaRDD<LabeledPoint>[] splits = labeledPointJavaRDD.randomSplit(new double[]{0.6, 0.4}, 11L);
         JavaRDD<LabeledPoint> training = splits[0].cache();
         JavaRDD<LabeledPoint> test = splits[1];
 
-        model = new LogisticRegressionWithLBFGS()
-                .setNumClasses(2)
-                .run(training.rdd());
+
+        linearModel = model.run(training.rdd());
 
         JavaRDD<Tuple2<Object, Object>> predictionAndLabels = test.map(
                 (Function<LabeledPoint, Tuple2<Object, Object>>) p -> {
-                    Double prediction = model.predict(p.features());
+                    Double prediction = linearModel.predict(p.features());
                     return new Tuple2<>(prediction, p.label());
                 }
         );
@@ -94,6 +94,11 @@ public class LogisticRegression implements Serializable {
             }
         }
         return Vectors.dense(features);
+    }
+
+    private JavaSparkContext createSparkContext() {
+        SparkConf conf = new SparkConf().setAppName("Finance Fraud Detection").setMaster("local[*]");
+        return new JavaSparkContext(conf);
     }
 
 }
