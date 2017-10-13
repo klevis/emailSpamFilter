@@ -9,6 +9,7 @@ import org.apache.spark.mllib.evaluation.MulticlassMetrics;
 import org.apache.spark.mllib.optimization.L1Updater;
 
 import javax.swing.*;
+import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -29,7 +30,10 @@ public class EmailUI implements Serializable {
     private int featureSize;
     private ClassificationAlgorithm classificationAlgorithm;
 
-    public EmailUI(int featureSize) {
+    public EmailUI(int featureSize) throws Exception {
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        UIManager.put("Button.font", new FontUIResource(new Font("Dialog", Font.BOLD, 16)));
+        UIManager.put("ProgressBar.font", new FontUIResource(new Font("Dialog", Font.BOLD, 16)));
         this.featureSize = featureSize;
         initUI();
     }
@@ -63,8 +67,8 @@ public class EmailUI implements Serializable {
 
     private void addSignature(JPanel mainFrame) {
         JLabel signature = new JLabel("ramok.tech", JLabel.HORIZONTAL);
-        signature.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 16));
-        signature.setForeground(Color.DARK_GRAY);
+        signature.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 20));
+        signature.setForeground(Color.BLUE);
         mainFrame.add(signature, BorderLayout.SOUTH);
     }
 
@@ -206,6 +210,7 @@ public class EmailUI implements Serializable {
                 System.exit(0);
             }
         });
+        mainFrame.setUndecorated(true);
         return mainFrame;
     }
 
