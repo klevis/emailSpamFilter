@@ -69,7 +69,7 @@ public class EmailUI implements Serializable {
     }
 
     private JButton createTestButton() {
-        JButton test = new JButton("Test");
+        JButton test = new JButton("Test Your Email");
         test.addActionListener(action -> {
 
             try {
