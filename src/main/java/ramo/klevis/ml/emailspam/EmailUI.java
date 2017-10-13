@@ -86,7 +86,7 @@ public class EmailUI implements Serializable {
     }
 
     private JButton createTrainButton() {
-        JButton train = new JButton("Train with LG LBFGS");
+        JButton train = new JButton("Train with LR LBFGS");
         train.addActionListener(action -> {
             showProgressBar();
 
@@ -117,7 +117,7 @@ public class EmailUI implements Serializable {
     }
 
     private JButton createSGDTrainButton() {
-        JButton train = new JButton("Train with LG SGD");
+        JButton train = new JButton("Train with LR SGD");
         train.addActionListener(action -> {
             showProgressBar();
 
