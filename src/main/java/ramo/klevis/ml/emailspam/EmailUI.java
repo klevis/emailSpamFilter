@@ -210,7 +210,6 @@ public class EmailUI implements Serializable {
                 System.exit(0);
             }
         });
-        mainFrame.setUndecorated(true);
         return mainFrame;
     }
 
