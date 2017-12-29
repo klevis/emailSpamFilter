@@ -32,7 +32,7 @@ public class PrepareData implements Serializable{
 
 
     public Email prepareEmailForTesting(String emailString) {
-        return new Email(tokenizeIntoWords(preapreEmail(emailString.toLowerCase())));
+        return new Email(tokenizeIntoWords(prepareEmail(emailString.toLowerCase())));
     }
 
     public Map<String, Integer> createVocabulary() throws Exception {
@@ -41,7 +41,6 @@ public class PrepareData implements Serializable{
         List<String> collect1 = filesToWords(first);
         List<String> collect2 = filesToWords(second);
 
-        System.out.println(collect1.size() + collect2.size());
         ArrayList<String> all = new ArrayList<>(collect1);
         all.addAll(collect2);
         HashMap<String, Integer> countWords = countWords(all);
@@ -59,7 +58,7 @@ public class PrepareData implements Serializable{
                 .map(file -> {
                     try {
 
-                        return new Email(tokenizeIntoWords(preapreEmail(new String(Files.readAllBytes(file)).toLowerCase())), fileName.contains("spam"));
+                        return new Email(tokenizeIntoWords(prepareEmail(new String(Files.readAllBytes(file)).toLowerCase())), fileName.contains("spam"));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -111,7 +110,7 @@ public class PrepareData implements Serializable{
                 }).collect(Collectors.toList());
 
         System.out.println("collect = " + collect.size());
-        return collect.stream().parallel().flatMap(e -> tokenizeIntoWords(preapreEmail(e)).stream()).collect(Collectors.toList());
+        return collect.stream().parallel().flatMap(e -> tokenizeIntoWords(prepareEmail(e)).stream()).collect(Collectors.toList());
     }
 
     private List<String> tokenizeIntoWords(String dollarReplaced) {
@@ -130,7 +129,7 @@ public class PrepareData implements Serializable{
         return wordsList;
     }
 
-    private String preapreEmail(String email) {
+    private String prepareEmail(String email) {
         int beginIndex = email.indexOf("\n\n");
         String withoutHeader = email;
         if (beginIndex > 0) {
